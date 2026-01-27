@@ -1,2 +1,23 @@
+# Rust
 /target
+/debug
+Cargo.lock
+
+# Configuration
+.env
+*.env
+
+# IDEs
+.idea
+.vscode
+*.iml
+
+# Logs
+*.log
+
+# Allow documentation files
+!task.md
+!implementation_plan.md
+
+# Legacy Java Project
 SMPPSim/
