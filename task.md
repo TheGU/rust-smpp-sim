@@ -27,7 +27,7 @@
   - [x] Implement MO Message Injection UI
 
 - [ ] **Verification & Testing**
-  - [ ] Unit Tests for Protocol logic
+  - [x] Unit Tests for Protocol logic
   - [ ] Integration Tests with `smpp-client`
   - [ ] Verify Docker Build
 

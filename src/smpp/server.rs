@@ -68,7 +68,7 @@ async fn handle_connection(socket: TcpStream, config: Arc<AppConfig>, session_ma
     Ok(())
 }
 
-async fn handle_command(
+pub(crate) async fn handle_command(
     command: &Command, 
     config: &AppConfig, 
     session_manager: &SessionManager,
