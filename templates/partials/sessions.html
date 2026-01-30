@@ -1,0 +1,11 @@
+<table>
+    <thead><tr><th>ID</th><th>System</th><th>Type</th><th>Address</th></tr></thead>
+    <tbody>
+        {% for session in sessions %}
+        <tr><td>{{ session.id|truncate(8) }}</td><td>{{ session.system_id }}</td><td>{{ session.bind_type }}</td><td>{{ session.addr }}</td></tr>
+        {% endfor %}
+        {% if sessions.is_empty() %}
+        <tr><td colspan="4" class="empty">No sessions</td></tr>
+        {% endif %}
+    </tbody>
+</table>

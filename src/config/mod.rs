@@ -20,6 +20,7 @@ pub struct SmppConfig {
     pub system_id: String,
     pub password: String,
     pub port: u16,
+    #[allow(dead_code)]
     pub max_sessions: usize,
 }
 

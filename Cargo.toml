@@ -11,10 +11,12 @@ askama = "0.15.1"
 config = "0.15.19"
 dashmap = "6.1.0"
 dotenvy = "0.15.7"
+futures = "0.3.31"
 rusmpp = "0.4.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 tokio = { version = "1.49.0", features = ["full"] }
+tokio-util = { version = "0.7.18", features = ["codec"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 uuid = { version = "1.20.0", features = ["v4", "fast-rng"] }

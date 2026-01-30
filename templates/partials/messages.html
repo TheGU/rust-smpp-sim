@@ -1,0 +1,11 @@
+<table>
+    <thead><tr><th>ID</th><th>From</th><th>To</th><th>Content</th></tr></thead>
+    <tbody>
+        {% for msg in messages %}
+        <tr><td>{{ msg.message_id }}</td><td>{{ msg.source_addr }}</td><td>{{ msg.dest_addr }}</td><td>{{ msg.content }}</td></tr>
+        {% endfor %}
+        {% if messages.is_empty() %}
+        <tr><td colspan="4" class="empty">No messages yet</td></tr>
+        {% endif %}
+    </tbody>
+</table>

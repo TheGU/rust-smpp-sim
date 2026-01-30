@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMPP Simulator</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #111; color: #eee; font-size: 13px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 12px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333; margin-bottom: 12px; }
+        h1 { font-size: 16px; font-weight: 600; }
+        .badges span { margin-left: 12px; font-size: 11px; }
+        .green { color: #4a4; }
+        .blue { color: #68f; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+        .stat { background: #1a1a1a; padding: 10px; border-radius: 4px; }
+        .stat-label { color: #888; font-size: 11px; }
+        .stat-value { font-size: 20px; font-weight: bold; margin-top: 2px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .card { background: #1a1a1a; padding: 10px; border-radius: 4px; }
+        .card h2 { font-size: 13px; margin-bottom: 8px; color: #aaa; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #333; }
+        th { color: #666; font-weight: 500; }
+        td { font-family: monospace; }
+        .empty { text-align: center; color: #555; padding: 16px; }
+        form { display: flex; flex-direction: column; gap: 8px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        input, textarea { background: #0a0a0a; border: 1px solid #333; border-radius: 3px; padding: 6px 8px; color: #eee; font-size: 12px; }
+        input:focus, textarea:focus { outline: none; border-color: #68f; }
+        textarea { resize: vertical; min-height: 50px; }
+        button { background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        button:hover { background: #1d4ed8; }
+        .success { color: #4a4; font-size: 11px; padding: 4px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SMPP Simulator</h1>
+            <div class="badges">
+                <span class="green">● SMPP :{{ smpp_port }}</span>
+                <span>System: {{ system_id }}</span>
+            </div>
+        </header>
+
+        <!-- Stats area - refreshed by htmx -->
+        <div class="grid" id="stats-grid" hx-get="/partials/stats" hx-trigger="every 2s" hx-swap="innerHTML">
+            <div class="stat"><div class="stat-label">Sessions</div><div class="stat-value">{{ session_count }}</div></div>
+            <div class="stat"><div class="stat-label">Messages</div><div class="stat-value">{{ message_count }}</div></div>
+            <div class="stat"><div class="stat-label">Pending DR</div><div class="stat-value">{{ pending_dr_count }}</div></div>
+            <div class="stat"><div class="stat-label">System ID</div><div class="stat-value" style="font-size:14px">{{ system_id }}</div></div>
+        </div>
+
+        <div class="row">
+            <!-- Sessions table - refreshed by htmx -->
+            <div class="card">
+                <h2>Active Sessions</h2>
+                <div id="sessions-table" hx-get="/partials/sessions" hx-trigger="every 10s" hx-swap="innerHTML">
+                    <table>
+                        <thead><tr><th>ID</th><th>System</th><th>Type</th><th>Address</th></tr></thead>
+                        <tbody>
+                            {% for session in sessions %}
+                            <tr><td>{{ session.id|truncate(8) }}</td><td>{{ session.system_id }}</td><td>{{ session.bind_type }}</td><td>{{ session.addr }}</td></tr>
+                            {% endfor %}
+                            {% if sessions.is_empty() %}
+                            <tr><td colspan="4" class="empty">No sessions</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Form - NOT refreshed, stays static -->
+            <div class="card">
+                <h2>Inject MO Message</h2>
+                <form id="mo-form" hx-post="/api/inject-mo" hx-target="#mo-result" hx-swap="innerHTML">
+                    <div class="form-row">
+                        <input type="text" name="source" placeholder="Source: +1234567890" required>
+                        <input type="text" name="dest" placeholder="Dest: +0987654321" required>
+                    </div>
+                    <textarea name="message" placeholder="Message text..." required></textarea>
+                    <button type="submit">Send MO</button>
+                </form>
+                <div id="mo-result"></div>
+            </div>
+        </div>
+
+        <!-- Messages table - refreshed by htmx -->
+        <div class="card">
+            <h2>Received Messages</h2>
+            <div id="messages-table" hx-get="/partials/messages" hx-trigger="every 2s" hx-swap="innerHTML">
+                <table>
+                    <thead><tr><th>ID</th><th>From</th><th>To</th><th>Content</th></tr></thead>
+                    <tbody>
+                        {% for msg in messages %}
+                        <tr><td>{{ msg.message_id }}</td><td>{{ msg.source_addr }}</td><td>{{ msg.dest_addr }}</td><td>{{ msg.content }}</td></tr>
+                        {% endfor %}
+                        {% if messages.is_empty() %}
+                        <tr><td colspan="4" class="empty">No messages yet</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
