@@ -4,37 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMPP Simulator</title>
+    <link rel="stylesheet" href="/static/style.css">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; background: #111; color: #eee; font-size: 13px; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 12px; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333; margin-bottom: 12px; }
-        h1 { font-size: 16px; font-weight: 600; }
-        .badges span { margin-left: 12px; font-size: 11px; }
-        .green { color: #4a4; }
-        .blue { color: #68f; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-        .stat { background: #1a1a1a; padding: 10px; border-radius: 4px; }
-        .stat-label { color: #888; font-size: 11px; }
-        .stat-value { font-size: 20px; font-weight: bold; margin-top: 2px; }
-        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-        .card { background: #1a1a1a; padding: 10px; border-radius: 4px; }
-        .card h2 { font-size: 13px; margin-bottom: 8px; color: #aaa; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #333; }
-        th { color: #666; font-weight: 500; }
-        td { font-family: monospace; }
-        .empty { text-align: center; color: #555; padding: 16px; }
-        form { display: flex; flex-direction: column; gap: 8px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        input, textarea { background: #0a0a0a; border: 1px solid #333; border-radius: 3px; padding: 6px 8px; color: #eee; font-size: 12px; }
-        input:focus, textarea:focus { outline: none; border-color: #68f; }
-        textarea { resize: vertical; min-height: 50px; }
-        button { background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 3px; cursor: pointer; font-size: 12px; }
-        button:hover { background: #1d4ed8; }
-        .success { color: #4a4; font-size: 11px; padding: 4px 0; }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -55,7 +26,7 @@
         </div>
 
         <div class="row">
-            <!-- Sessions table - refreshed by htmx -->
+            <!-- Sessions table -->
             <div class="card">
                 <h2>Active Sessions</h2>
                 <div id="sessions-table" hx-get="/partials/sessions" hx-trigger="every 10s" hx-swap="innerHTML">
@@ -73,7 +44,7 @@
                 </div>
             </div>
 
-            <!-- Form - NOT refreshed, stays static -->
+            <!-- Form - static -->
             <div class="card">
                 <h2>Inject MO Message</h2>
                 <form id="mo-form" hx-post="/api/inject-mo" hx-target="#mo-result" hx-swap="innerHTML">
@@ -88,8 +59,8 @@
             </div>
         </div>
 
-        <!-- Messages table - refreshed by htmx -->
-        <div class="card">
+        <!-- Messages table -->
+        <div class="card" style="margin-bottom: 12px;">
             <h2>Received Messages</h2>
             <div id="messages-table" hx-get="/partials/messages" hx-trigger="every 2s" hx-swap="innerHTML">
                 <table>
@@ -105,6 +76,24 @@
                 </table>
             </div>
         </div>
+
+        <!-- Real-time Logs -->
+        <div class="card">
+            <h2>Server Logs (Real-time)</h2>
+            <div id="log-container" class="log-panel" hx-get="/partials/logs" hx-trigger="load"></div>
+        </div>
     </div>
+
+    <script>
+        const logContainer = document.getElementById('log-container');
+        const evtSource = new EventSource('/api/logs/stream');
+        evtSource.onmessage = function(event) {
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            div.textContent = event.data;
+            logContainer.insertBefore(div, logContainer.firstChild);
+            while (logContainer.children.length > 100) logContainer.removeChild(logContainer.lastChild);
+        };
+    </script>
 </body>
 </html>

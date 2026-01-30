@@ -6,8 +6,11 @@ mod model;
 use crate::config::AppConfig;
 use crate::smpp::session::SessionManager;
 use crate::smpp::queue::MessageQueue;
+use crate::web::{LogBuffer, LogBufferLayer};
 use dotenvy::dotenv;
 use tracing::info;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -23,9 +26,14 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    // Initialize logging
-    tracing_subscriber::fmt()
-        .with_env_filter(format!("{},{}", config.log.level, "actix_web=info"))
+    // Create log buffer for web UI streaming
+    let log_buffer = LogBuffer::new();
+
+    // Initialize logging with custom layer for web UI
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::EnvFilter::new(format!("{},{}", config.log.level, "actix_web=info")))
+        .with(LogBufferLayer::new(log_buffer.clone()))
         .init();
 
     info!("Starting Rust SMPP Simulator...");
@@ -40,9 +48,10 @@ async fn main() -> std::io::Result<()> {
     let web_config = config.clone();
     let web_session_manager = session_manager.clone();
     let web_message_queue = message_queue.clone();
+    let web_log_buffer = log_buffer.clone();
     std::thread::spawn(move || {
         let sys = actix_rt::System::new();
-        if let Err(e) = sys.block_on(web::start_web_server(web_config, web_session_manager, web_message_queue)) {
+        if let Err(e) = sys.block_on(web::start_web_server(web_config, web_session_manager, web_message_queue, web_log_buffer)) {
              tracing::error!("Web server error: {}", e);
         }
     });
@@ -62,4 +71,3 @@ async fn main() -> std::io::Result<()> {
     
     Ok(())
 }
-

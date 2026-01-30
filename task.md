@@ -23,7 +23,7 @@
   - [x] Create HTTP Server (Actix/Axum)
   - [x] Implement Dashboard (HTML/CSS) forStatus
   - [x] Implement Configuration View & Edit API
-  - [ ] Implement Real-time Log View (WebSocket/SSE)
+  - [x] Implement Real-time Log View (WebSocket/SSE)
   - [x] Implement MO Message Injection UI
 
 - [ ] **Verification & Testing**

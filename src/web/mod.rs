@@ -8,12 +8,16 @@ use serde::{Deserialize, Serialize};
 
 #[allow(dead_code)]
 pub mod utils;
+pub mod logs;
+
+pub use logs::{LogBuffer, LogBufferLayer};
 
 /// Shared application state
 pub struct AppState {
     pub config: Arc<AppConfig>,
     pub session_manager: Arc<SessionManager>,
     pub message_queue: Arc<MessageQueue>,
+    pub log_buffer: Arc<LogBuffer>,
 }
 
 #[derive(Serialize)]
@@ -36,6 +40,7 @@ struct SessionDisplay {
 #[template(path = "dashboard.html")]
 struct DashboardTemplate {
     smpp_port: u16,
+    #[allow(dead_code)]
     web_port: u16,
     system_id: String,
     session_count: usize,
@@ -206,10 +211,52 @@ async fn inject_mo(data: web::Data<AppState>, body: web::Form<InjectMoRequest>) 
         .body("<div class=\"success\">✓ Message sent</div>")
 }
 
+/// Get recent logs as HTML partial (for initial load)
+#[get("/partials/logs")]
+async fn partials_logs(data: web::Data<AppState>) -> impl Responder {
+    let logs = data.log_buffer.get_all();
+    let html: String = logs.iter()
+        .rev()  // newest first
+        .take(50)
+        .map(|l| {
+            let escaped = l.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+                .replace('"', "&quot;");
+            format!("<div class=\"log-line\">{}</div>", escaped)
+        })
+        .collect();
+    HttpResponse::Ok().content_type("text/html").body(html)
+}
+
+/// SSE endpoint for real-time log streaming
+#[get("/api/logs/stream")]
+async fn logs_stream(data: web::Data<AppState>) -> impl Responder {
+    use actix_web::http::header;
+    use futures::StreamExt;
+
+    let mut rx = data.log_buffer.subscribe();
+    
+    let stream = async_stream::stream! {
+        while let Ok(line) = rx.recv().await {
+            let escaped = line.replace('\n', " ").replace('\r', "");
+            yield Ok::<_, std::io::Error>(
+                actix_web::web::Bytes::from(format!("data: {}\n\n", escaped))
+            );
+        }
+    };
+
+    HttpResponse::Ok()
+        .insert_header((header::CONTENT_TYPE, "text/event-stream"))
+        .insert_header((header::CACHE_CONTROL, "no-cache"))
+        .streaming(stream.boxed())
+}
+
 pub async fn start_web_server(
     config: Arc<AppConfig>,
     session_manager: Arc<SessionManager>,
     message_queue: Arc<MessageQueue>,
+    log_buffer: Arc<LogBuffer>,
 ) -> std::io::Result<()> {
     let server_config = config.server.clone();
     
@@ -217,6 +264,7 @@ pub async fn start_web_server(
         config: config.clone(),
         session_manager,
         message_queue,
+        log_buffer,
     });
     
     tracing::info!("Starting Web UI on {}:{}", server_config.host, server_config.port);
@@ -229,8 +277,11 @@ pub async fn start_web_server(
             .service(partials_stats)
             .service(partials_sessions)
             .service(partials_messages)
+            .service(partials_logs)
+            .service(logs_stream)
             .service(get_stats)
             .service(inject_mo)
+            .service(actix_files::Files::new("/static", "static").show_files_listing())
     })
     .bind((server_config.host.as_str(), server_config.port))?
     .run()

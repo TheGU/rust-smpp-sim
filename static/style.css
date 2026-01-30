@@ -1,0 +1,173 @@
+/* SMPP Simulator Dashboard Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: system-ui, sans-serif;
+  background: #111;
+  color: #eee;
+  font-size: 13px;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  margin-bottom: 12px;
+}
+h1 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.badges span {
+  margin-left: 12px;
+  font-size: 11px;
+}
+.green {
+  color: #4a4;
+}
+.blue {
+  color: #68f;
+}
+
+/* Stats Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.stat {
+  background: #1a1a1a;
+  padding: 10px;
+  border-radius: 4px;
+}
+.stat-label {
+  color: #888;
+  font-size: 11px;
+}
+.stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+/* Layout */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.card {
+  background: #1a1a1a;
+  padding: 10px;
+  border-radius: 4px;
+}
+.card h2 {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #aaa;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+th,
+td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #333;
+}
+th {
+  color: #666;
+  font-weight: 500;
+}
+td {
+  font-family: monospace;
+}
+.empty {
+  text-align: center;
+  color: #555;
+  padding: 16px;
+}
+
+/* Forms */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+input,
+textarea {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 3px;
+  padding: 6px 8px;
+  color: #eee;
+  font-size: 12px;
+}
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: #68f;
+}
+textarea {
+  resize: vertical;
+  min-height: 50px;
+}
+button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+button:hover {
+  background: #1d4ed8;
+}
+.success {
+  color: #4a4;
+  font-size: 11px;
+  padding: 4px 0;
+}
+
+/* Log Panel */
+.log-panel {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px;
+  height: 200px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 11px;
+}
+.log-line {
+  padding: 2px 0;
+  border-bottom: 1px solid #1a1a1a;
+  word-break: break-all;
+}
+.log-line:last-child {
+  border-bottom: none;
+}
