@@ -22,7 +22,7 @@
             <div class="stat"><div class="stat-label">Sessions</div><div class="stat-value">{{ session_count }}</div></div>
             <div class="stat"><div class="stat-label">Messages</div><div class="stat-value">{{ message_count }}</div></div>
             <div class="stat"><div class="stat-label">Pending DR</div><div class="stat-value">{{ pending_dr_count }}</div></div>
-            <div class="stat"><div class="stat-label">System ID</div><div class="stat-value" style="font-size:14px">{{ system_id }}</div></div>
+            <div class="stat"><div class="stat-label">System ID</div><div class="stat-value small">{{ system_id }}</div></div>
         </div>
 
         <div class="row">
@@ -60,7 +60,7 @@
         </div>
 
         <!-- Messages table -->
-        <div class="card" style="margin-bottom: 12px;">
+        <div class="card mb-md">
             <h2>Received Messages</h2>
             <div id="messages-table" hx-get="/partials/messages" hx-trigger="every 2s" hx-swap="innerHTML">
                 <table>

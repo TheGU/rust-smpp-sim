@@ -171,3 +171,11 @@ button:hover {
 .log-line:last-child {
   border-bottom: none;
 }
+
+.stat-value.small {
+  font-size: 14px;
+}
+
+.mb-md {
+  margin-bottom: 12px;
+}
