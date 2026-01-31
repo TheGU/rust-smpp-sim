@@ -1,12 +1,8 @@
-mod config;
-mod smpp;
-mod web;
-mod model;
-
-use crate::config::AppConfig;
-use crate::smpp::session::SessionManager;
-use crate::smpp::queue::MessageQueue;
-use crate::web::{LogBuffer, LogBufferLayer};
+use rust_smpp_sim::config::AppConfig;
+use rust_smpp_sim::smpp::session::SessionManager;
+use rust_smpp_sim::smpp::queue::MessageQueue;
+use rust_smpp_sim::web::{LogBuffer, LogBufferLayer};
+use rust_smpp_sim::{smpp, web};
 use dotenvy::dotenv;
 use tracing::info;
 use tracing_subscriber::layer::SubscriberExt;

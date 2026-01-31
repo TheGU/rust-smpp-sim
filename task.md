@@ -28,10 +28,11 @@
 
 - [ ] **Verification & Testing**
   - [x] Unit Tests for Protocol logic
-  - [ ] Integration Tests with `smpp-client`
-  - [ ] Verify Docker Build
+  - [x] Integration Tests with `smpp-client`
+  - [x] Verify Docker Build
 
 - [ ] **Deployment**
   - [x] Create Optimization-focused Dockerfile
   - [ ] Create CI/CD Pipeline (GitHub Actions)
   - [ ] Create Release script/docs
+  - [ ] Create publish image on ghcr.io
