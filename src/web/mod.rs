@@ -2,7 +2,7 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use askama::Template;
 use crate::config::AppConfig;
 use crate::smpp::session::SessionManager;
-use crate::smpp::queue::MessageQueue;
+use crate::smpp::queue::{MessageQueue, MoMessageQueue, MoMessage};
 use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +17,7 @@ pub struct AppState {
     pub config: Arc<AppConfig>,
     pub session_manager: Arc<SessionManager>,
     pub message_queue: Arc<MessageQueue>,
+    pub mo_queue: Arc<MoMessageQueue>,
     pub log_buffer: Arc<LogBuffer>,
 }
 
@@ -193,22 +194,20 @@ async fn get_stats(data: web::Data<AppState>) -> impl Responder {
 async fn inject_mo(data: web::Data<AppState>, body: web::Form<InjectMoRequest>) -> impl Responder {
     tracing::info!("MO Injection: {} -> {}: {}", body.source, body.dest, body.message);
     
-    // Add the MO message to the queue so it shows up in the dashboard
-    let queued_msg = crate::smpp::queue::QueuedMessage {
-        message_id: data.message_queue.next_message_id(),
-        source_addr: body.source.clone(),
-        dest_addr: body.dest.clone(),
-        short_message: body.message.as_bytes().to_vec(),
-        data_coding: 0,
-        session_id: "web-injection".to_string(),
-        submitted_at: std::time::Instant::now(),
+    let mo_msg = MoMessage {
+         source_addr: body.source.clone(),
+         dest_addr: body.dest.clone(),
+         short_message: body.message.clone(),
     };
-    data.message_queue.add_pending_dr(queued_msg);
     
-    // Return HTML for htmx
+    if let Err(e) = data.mo_queue.inject(mo_msg).await {
+         tracing::error!("Failed to inject MO message: {}", e);
+         return HttpResponse::InternalServerError().body("Failed to inject");
+    }
+    
     HttpResponse::Ok()
         .content_type("text/html")
-        .body("<div class=\"success\">✓ Message sent</div>")
+        .body("<div class=\"success\">✓ Message queued for delivery</div>")
 }
 
 /// Get recent logs as HTML partial (for initial load)
@@ -256,6 +255,7 @@ pub async fn start_web_server(
     config: Arc<AppConfig>,
     session_manager: Arc<SessionManager>,
     message_queue: Arc<MessageQueue>,
+    mo_queue: Arc<MoMessageQueue>,
     log_buffer: Arc<LogBuffer>,
 ) -> std::io::Result<()> {
     let server_config = config.server.clone();
@@ -264,6 +264,7 @@ pub async fn start_web_server(
         config: config.clone(),
         session_manager,
         message_queue,
+        mo_queue,
         log_buffer,
     });
     

@@ -39,15 +39,17 @@ async fn main() -> std::io::Result<()> {
     let config = Arc::new(config);
     let session_manager = Arc::new(SessionManager::new());
     let message_queue = Arc::new(MessageQueue::new());
+    let mo_message_queue = Arc::new(rust_smpp_sim::smpp::queue::MoMessageQueue::new());
 
     // Start Web Server
     let web_config = config.clone();
     let web_session_manager = session_manager.clone();
     let web_message_queue = message_queue.clone();
+    let web_mo_queue = mo_message_queue.clone();
     let web_log_buffer = log_buffer.clone();
     std::thread::spawn(move || {
         let sys = actix_rt::System::new();
-        if let Err(e) = sys.block_on(web::start_web_server(web_config, web_session_manager, web_message_queue, web_log_buffer)) {
+        if let Err(e) = sys.block_on(web::start_web_server(web_config, web_session_manager, web_message_queue, web_mo_queue, web_log_buffer)) {
              tracing::error!("Web server error: {}", e);
         }
     });
@@ -62,8 +64,25 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
+    // Start Lifecycle Manager
+    let lc_config = config.clone();
+    let lc_session_manager = session_manager.clone();
+    let lc_message_queue = message_queue.clone();
+    let lifecycle_task = tokio::spawn(async move {
+        smpp::lifecycle::start_lifecycle_task(lc_config, lc_session_manager, lc_message_queue).await;
+    });
+
+    // Start MO Service
+    let mo_config = config.clone();
+    let mo_session_manager = session_manager.clone();
+    let mo_queue_service = mo_message_queue.clone();
+    
+    let mo_task = tokio::spawn(async move {
+        smpp::mo_service::start_mo_service_task(mo_config, mo_session_manager, mo_queue_service).await;
+    });
+
     // Wait for the servers
-    let _ = tokio::join!(smpp_server);
+    let _ = tokio::join!(smpp_server, lifecycle_task, mo_task);
     
     Ok(())
 }

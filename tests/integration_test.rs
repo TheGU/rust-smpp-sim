@@ -1,4 +1,4 @@
-use rust_smpp_sim::config::{AppConfig, SmppConfig, ServerConfig, LogConfig};
+use rust_smpp_sim::config::{AppConfig, SmppConfig, ServerConfig, LogConfig, LifecycleConfig, MoServiceConfig};
 use rust_smpp_sim::smpp::server::start_smpp_server;
 use rust_smpp_sim::smpp::session::SessionManager;
 use rust_smpp_sim::smpp::queue::MessageQueue;
@@ -32,10 +32,13 @@ async fn test_smpp_flow() {
             password: password.to_string(),
             port: port,
             max_sessions: 10,
+            accounts: vec![],
         },
         log: LogConfig {
             level: "info".to_string(),
         },
+        lifecycle: LifecycleConfig::default(),
+        mo_service: MoServiceConfig::default(),
     });
 
     let session_manager = Arc::new(SessionManager::new());

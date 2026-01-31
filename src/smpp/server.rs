@@ -33,29 +33,47 @@ pub async fn start_smpp_server(
     }
 }
 
+use tokio::sync::mpsc;
+
 async fn handle_connection(socket: TcpStream, config: Arc<AppConfig>, session_manager: Arc<SessionManager>, message_queue: Arc<MessageQueue>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let remote_addr = socket.peer_addr()?;
     tracing::info!("New connection from {}", remote_addr);
 
     // Use rusmpp codec for framing
-    let mut framed = Framed::new(socket, CommandCodec::new());
+    let framed = Framed::new(socket, CommandCodec::new());
+    let (mut sink, mut stream) = framed.split();
     
+    // Channel for sending PDUs from other parts of the application (e.g. LifecycleManager) to this socket
+    let (tx, mut rx) = mpsc::channel(100);
+
     // Track current session ID if authenticated
     let mut current_session_id: Option<String> = None;
 
-    while let Some(command_result) = framed.next().await {
-        match command_result {
-            Ok(command) => {
-                tracing::debug!("Received Command from {}: {:?}", remote_addr, command);
-                
-                if let Some(resp) = handle_command(&command, &config, &session_manager, &message_queue, &mut current_session_id, remote_addr).await {
-                    framed.send(resp).await?;
+    loop {
+        tokio::select! {
+            // Handle incoming PDU from client
+            Some(command_result) = stream.next() => {
+                match command_result {
+                    Ok(command) => {
+                        tracing::debug!("Received Command from {}: {:?}", remote_addr, command);
+                        
+                        // Pass tx.clone() so handle_command can give it to a new Session
+                        if let Some(resp) = handle_command(&command, &config, &session_manager, &message_queue, &mut current_session_id, remote_addr, tx.clone()).await {
+                            sink.send(resp).await?;
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("Error decoding PDU from {}: {}", remote_addr, e);
+                        break;
+                    }
                 }
             }
-            Err(e) => {
-                tracing::error!("Error decoding PDU from {}: {}", remote_addr, e);
-                break;
+            // Handle outgoing PDU from server (e.g. Delivery Receipt)
+            Some(command) = rx.recv() => {
+                tracing::debug!("Sending async Command to {}: {:?}", remote_addr, command);
+                sink.send(command).await?;
             }
+            else => break,
         }
     }
     
@@ -68,13 +86,28 @@ async fn handle_connection(socket: TcpStream, config: Arc<AppConfig>, session_ma
     Ok(())
 }
 
+fn authenticate(system_id: &str, password: &str, config: &AppConfig) -> bool {
+    // Check default account
+    if system_id == config.smpp.system_id && password == config.smpp.password {
+        return true;
+    }
+    // Check additional accounts
+    for account in &config.smpp.accounts {
+        if system_id == account.system_id && password == account.password {
+            return true;
+        }
+    }
+    false
+}
+
 pub(crate) async fn handle_command(
     command: &Command, 
     config: &AppConfig, 
     session_manager: &SessionManager,
     message_queue: &MessageQueue,
     current_session_id: &mut Option<String>,
-    remote_addr: std::net::SocketAddr
+    remote_addr: std::net::SocketAddr,
+    sender: mpsc::Sender<Command>,
 ) -> Option<Command> {
     if let Some(pdu_ref) = command.pdu() {
         let pdu = pdu_ref.clone();
@@ -82,8 +115,9 @@ pub(crate) async fn handle_command(
             Pdu::BindTransmitter(req) => {
                 tracing::info!("BindTransmitter: {:?}", req);
                 // AUTH CHECK
-                if req.system_id.to_string() == config.smpp.system_id && req.password.to_string() == config.smpp.password {
-                     let session = Session::new(req.system_id.to_string(), BindType::Transmitter, remote_addr);
+                if authenticate(&req.system_id.to_string(), &req.password.to_string(), config) {
+                     let address_range = if req.address_range.to_string().is_empty() { None } else { Some(req.address_range.to_string()) };
+                     let session = Session::new(req.system_id.to_string(), BindType::Transmitter, remote_addr, sender, address_range);
                      *current_session_id = Some(session.id.clone());
                      session_manager.add_session(session);
                      
@@ -98,7 +132,7 @@ pub(crate) async fn handle_command(
                 } else {
                     tracing::warn!("Auth failed for system_id: {}", req.system_id.to_string());
                     Some(Command::builder()
-                                                .status(CommandStatus::EsmeRbindfail)
+                        .status(CommandStatus::EsmeRbindfail)
                         .sequence_number(command.sequence_number())
                         .pdu(Pdu::BindTransmitterResp(rusmpp::pdus::BindTransmitterResp::new(
                              req.system_id.clone(),
@@ -110,8 +144,9 @@ pub(crate) async fn handle_command(
             Pdu::BindReceiver(req) => {
                 tracing::info!("BindReceiver: {:?}", req);
                  // AUTH CHECK
-                if req.system_id.to_string() == config.smpp.system_id && req.password.to_string() == config.smpp.password {
-                     let session = Session::new(req.system_id.to_string(), BindType::Receiver, remote_addr);
+                if authenticate(&req.system_id.to_string(), &req.password.to_string(), config) {
+                     let address_range = if req.address_range.to_string().is_empty() { None } else { Some(req.address_range.to_string()) };
+                     let session = Session::new(req.system_id.to_string(), BindType::Receiver, remote_addr, sender, address_range);
                      *current_session_id = Some(session.id.clone());
                      session_manager.add_session(session);
 
@@ -125,7 +160,7 @@ pub(crate) async fn handle_command(
                      )
                 } else {
                      Some(Command::builder()
-                                                .status(CommandStatus::EsmeRbindfail)
+                        .status(CommandStatus::EsmeRbindfail)
                         .sequence_number(command.sequence_number())
                         .pdu(Pdu::BindReceiverResp(rusmpp::pdus::BindReceiverResp::new(
                              req.system_id.clone(),
@@ -137,8 +172,9 @@ pub(crate) async fn handle_command(
             Pdu::BindTransceiver(req) => {
                 tracing::info!("BindTransceiver: {:?}", req);
                  // AUTH CHECK
-                if req.system_id.to_string() == config.smpp.system_id && req.password.to_string() == config.smpp.password {
-                     let session = Session::new(req.system_id.to_string(), BindType::Transceiver, remote_addr);
+                if authenticate(&req.system_id.to_string(), &req.password.to_string(), config) {
+                     let address_range = if req.address_range.to_string().is_empty() { None } else { Some(req.address_range.to_string()) };
+                     let session = Session::new(req.system_id.to_string(), BindType::Transceiver, remote_addr, sender, address_range);
                      *current_session_id = Some(session.id.clone());
                      session_manager.add_session(session);
                      
@@ -152,7 +188,7 @@ pub(crate) async fn handle_command(
                      )
                 } else {
                      Some(Command::builder()
-                                                .status(CommandStatus::EsmeRbindfail)
+                        .status(CommandStatus::EsmeRbindfail)
                         .sequence_number(command.sequence_number())
                         .pdu(Pdu::BindTransceiverResp(rusmpp::pdus::BindTransceiverResp::new(
                              req.system_id.clone(),

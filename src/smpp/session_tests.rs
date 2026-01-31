@@ -8,6 +8,7 @@
 
 use crate::smpp::session::{Session, SessionManager, BindType};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use tokio::sync::mpsc;
 
 fn test_addr() -> SocketAddr {
     SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 12345)
@@ -22,10 +23,13 @@ fn test_session_manager_creation() {
 #[test]
 fn test_add_and_get_session() {
     let manager = SessionManager::new();
+    let (tx, _rx) = mpsc::channel(1);
     let session = Session::new(
         "client1".to_string(),
         BindType::Transceiver,
         test_addr(),
+        tx,
+        None,
     );
     let session_id = session.id.clone();
     
@@ -39,10 +43,13 @@ fn test_add_and_get_session() {
 #[test]
 fn test_remove_session() {
     let manager = SessionManager::new();
+    let (tx, _rx) = mpsc::channel(1);
     let session = Session::new(
         "client2".to_string(),
         BindType::Transmitter,
         test_addr(),
+        tx,
+        None,
     );
     let session_id = session.id.clone();
     
@@ -65,10 +72,13 @@ fn test_multiple_sessions() {
             1 => BindType::Receiver,
             _ => BindType::Transceiver,
         };
+        let (tx, _rx) = mpsc::channel(1);
         let session = Session::new(
             format!("client-{}", i),
             bind_type,
             test_addr(),
+            tx,
+            None
         );
         manager.add_session(session);
     }
@@ -80,10 +90,14 @@ fn test_multiple_sessions() {
 fn test_session_bind_types() {
     // Verify all bind types are correctly stored
     let manager = SessionManager::new();
+    let (tx, _rx) = mpsc::channel(1);
     
-    let tx_session = Session::new("tx-client".to_string(), BindType::Transmitter, test_addr());
-    let rx_session = Session::new("rx-client".to_string(), BindType::Receiver, test_addr());
-    let trx_session = Session::new("trx-client".to_string(), BindType::Transceiver, test_addr());
+    // We can reuse tx because we clone it? Sender is cloneable.
+    // mpsc::Sender is Clone.
+    
+    let tx_session = Session::new("tx-client".to_string(), BindType::Transmitter, test_addr(), tx.clone(), None);
+    let rx_session = Session::new("rx-client".to_string(), BindType::Receiver, test_addr(), tx.clone(), None);
+    let trx_session = Session::new("trx-client".to_string(), BindType::Transceiver, test_addr(), tx.clone(), None);
     
     let tx_id = tx_session.id.clone();
     let rx_id = rx_session.id.clone();
@@ -105,15 +119,16 @@ fn test_session_bind_types() {
 #[test]
 fn test_session_count() {
     let manager = SessionManager::new();
+    let (tx, _rx) = mpsc::channel(1);
     
     assert_eq!(manager.count(), 0);
     
-    let s1 = Session::new("c1".to_string(), BindType::Transceiver, test_addr());
+    let s1 = Session::new("c1".to_string(), BindType::Transceiver, test_addr(), tx.clone(), None);
     let s1_id = s1.id.clone();
     manager.add_session(s1);
     assert_eq!(manager.count(), 1);
     
-    manager.add_session(Session::new("c2".to_string(), BindType::Transceiver, test_addr()));
+    manager.add_session(Session::new("c2".to_string(), BindType::Transceiver, test_addr(), tx.clone(), None));
     assert_eq!(manager.count(), 2);
     
     manager.remove_session(&s1_id);

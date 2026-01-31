@@ -68,6 +68,16 @@ impl MessageQueue {
     pub fn pending_dr_count(&self) -> usize {
         self.pending_dr.len()
     }
+
+    /// Get all pending messages (snapshot for lifecycle processing)
+    pub fn get_pending_messages(&self) -> Vec<QueuedMessage> {
+        self.pending_dr.iter().map(|r| r.value().clone()).collect()
+    }
+
+    /// Remove a message from the pending DR queue
+    pub fn remove_pending_dr(&self, message_id: &str) {
+        self.pending_dr.remove(message_id);
+    }
 }
 
 /// Queue for MO (Mobile Originated) messages to be delivered to ESMEs

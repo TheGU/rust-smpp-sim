@@ -7,6 +7,7 @@ use crate::smpp::server::handle_command;
 use crate::config::AppConfig;
 use crate::smpp::session::{Session, SessionManager, BindType};
 use crate::smpp::queue::MessageQueue;
+use tokio::sync::mpsc;
 use rusmpp::{
     Command, Pdu, CommandStatus,
     pdus::{
@@ -34,10 +35,13 @@ fn test_config() -> AppConfig {
             password: "pass".to_string(),
             port: 2775,
             max_sessions: 50,
+            accounts: vec![],
         },
         log: crate::config::LogConfig {
             level: "info".to_string(),
         },
+        lifecycle: crate::config::LifecycleConfig::default(),
+        mo_service: crate::config::MoServiceConfig::default(),
     }
 }
 
@@ -46,7 +50,8 @@ async fn test_bind_transmitter_success() {
     let config = test_config();
     let session_manager = SessionManager::new();
     let message_queue = MessageQueue::new();
-    let mut current_session_id = None;
+    let mut current_session_id: Option<String> = None;
+    let (tx, _rx) = mpsc::channel(1);
 
     let bind_req = BindTransmitter::new(
         COctetString::from_str("user").unwrap(),
@@ -61,13 +66,15 @@ async fn test_bind_transmitter_success() {
     // Command::new(status, sequence_number, pdu)
     let command = Command::new(CommandStatus::EsmeRok, 1, Pdu::BindTransmitter(bind_req));
 
+    // Arguments: command, config, session_manager, message_queue, current_session_id, remote_addr, sender
     let resp = handle_command(
         &command,
         &config,
         &session_manager,
         &message_queue,
         &mut current_session_id,
-        test_addr()
+        test_addr(),
+        tx
     ).await;
 
     assert!(resp.is_some());
@@ -91,7 +98,8 @@ async fn test_bind_failure_bad_creds() {
     let config = test_config();
     let session_manager = SessionManager::new();
     let message_queue = MessageQueue::new();
-    let mut current_session_id = None;
+    let mut current_session_id: Option<String> = None;
+    let (tx, _rx) = mpsc::channel(1);
 
     let bind_req = BindTransmitter::new(
         COctetString::from_str("bad").unwrap(),
@@ -111,7 +119,8 @@ async fn test_bind_failure_bad_creds() {
         &session_manager,
         &message_queue,
         &mut current_session_id,
-        test_addr()
+        test_addr(),
+        tx
     ).await;
 
     assert!(resp.is_some());
@@ -125,7 +134,8 @@ async fn test_enquire_link() {
     let config = test_config();
     let session_manager = SessionManager::new();
     let message_queue = MessageQueue::new();
-    let mut current_session_id = None;
+    let mut current_session_id: Option<String> = None;
+    let (tx, _rx) = mpsc::channel(1);
 
     let command = Command::new(CommandStatus::EsmeRok, 3, Pdu::EnquireLink);
     
@@ -135,7 +145,8 @@ async fn test_enquire_link() {
         &session_manager,
         &message_queue,
         &mut current_session_id,
-        test_addr()
+        test_addr(),
+        tx
     ).await;
     
     assert!(resp.is_some());
@@ -149,12 +160,13 @@ async fn test_unbind() {
     let config = test_config();
     let session_manager = SessionManager::new();
     let message_queue = MessageQueue::new();
+    let (tx, _rx) = mpsc::channel(1);
     
     // Manually create session
-    let session = Session::new("test_sys".to_string(), BindType::Transmitter, test_addr());
+    let session = Session::new("test_sys".to_string(), BindType::Transmitter, test_addr(), tx.clone(), None);
     let sid = session.id.clone();
     session_manager.add_session(session);
-    let mut current_session_id = Some(sid.clone());
+    let mut current_session_id: Option<String> = Some(sid.clone());
     
     let command = Command::new(CommandStatus::EsmeRok, 4, Pdu::Unbind);
     
@@ -164,7 +176,8 @@ async fn test_unbind() {
         &session_manager,
         &message_queue,
         &mut current_session_id,
-        test_addr()
+        test_addr(),
+        tx
     ).await;
     
     assert!(resp.is_some());
