@@ -1,20 +1,70 @@
-[![](https://images.microbadger.com/badges/image/komuw/smpp_server.svg)](http://microbadger.com/images/komuw/smpp_server "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/komuw/smpp_server.svg)](http://microbadger.com/images/komuw/smpp_server "Get your own version badge on microbadger.com")
+# Rust SMPP Simulator
 
-# About            
-docker image for SMPP simulator from http://www.seleniumsoftware.com/              
+A high-performance, asynchronous SMPP 5.0 simulator written in Rust. Designed to replace legacy Java-based simulators with improved performance, stability, and modern features.
 
+## Features
 
-# usage           
-1. build:
+- **SMPP 5.0 Support**: Fully implements `BindTransmitter`, `BindReceiver`, `BindTransceiver`, `SubmitSm`, `EnquireLink`, and `Unbind`.
+- **Lifecycle Simulation**: Configurable message states (`Delivered`, `Undeliverable`, `Accepted`, `Rejected`) with random transition probabilities and delays.
+- **Delivery Receipts**: Automatically generates and sends `DeliverSm` receipts back to the client based on the simulated lifecycle.
+- **MO Injection**: Periodic injection of Mobile Originated messages from CSV files or manual triggers.
+- **Web Dashboard**: Real-time web interface to view :
+  - Active Sessions
+  - Message Queues (Outbound & Inbound)
+  - System Statistics (Messages/sec, Total Processed)
+  - Manual MO Injection
+- **Multi-Account Support**: Configure multiple system IDs and passwords.
+
+## Getting Started
+
+### Prerequisites
+
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable)
+
+### Building
+
 ```sh
-docker build -t komuw/smpp_server:<tag> .
+cargo build --release
 ```
 
-2. run:
+### Running
+
 ```sh
-docker run -it -P komuw/smpp_server     
+# Run with default settings
+cargo run
+
+# Run with custom log level
+RUST_LOG=debug cargo run
 ```
-                          
 
+The server listens on **port 2775** for SMPP connections and **port 8080** for the Web Dashboard by default.
 
-![terminal showing image usage](https://github.com/komuW/smpp_server_docker/blob/master/terminal_with_SMPP_simulator_running.png)
+## Configuration
+
+Configuration is managed via the `config` crate and supports environment variables and configuration files.
+
+### Key Configuration Options
+
+| Category      | Variable                        | Default | Description                      |
+| ------------- | ------------------------------- | ------- | -------------------------------- |
+| **Server**    | `SERVER_PORT`                   | `8080`  | Web Dashboard port               |
+| **SMPP**      | `SMPP_PORT`                     | `2775`  | SMPP listening port              |
+|               | `SMPP_SYSTEM_ID`                | `user`  | Default System ID                |
+|               | `SMPP_PASSWORD`                 | `pass`  | Default Password                 |
+| **Lifecycle** | `LIFECYCLE_MAX_TIME_ENROUTE_MS` | `5000`  | Max time before state transition |
+|               | `LIFECYCLE_PERCENT_DELIVERED`   | `90`    | Probability of `DELIVRD` status  |
+
+## Usage
+
+1. **Connect**: Use any SMPP client (e.g., `smpp-cli`, Kannel, or custom code) to bind to `localhost:2775` with `user`/`pass`.
+2. **Submit**: Send `SubmitSm` PDUs.
+3. **Monitor**: Open http://localhost:8080 to see the message appear in the queue.
+4. **Receipts**: Watch your client receive `DeliverSm` receipts after the simulated delay.
+
+## Web Interface
+
+Access the dashboard at `http://localhost:8080`.
+
+- **Dashboard**: Overview of active sessions and message counts.
+- **Logs**: Real-time server logs.
+- **Injection**: Upload CSVs or manually inject MO messages.

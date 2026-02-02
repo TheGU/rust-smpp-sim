@@ -72,11 +72,11 @@ async fn process_pending_messages(
 #[derive(Debug, Clone, Copy)]
 enum MessageState {
     Delivered,
-    Expired,
-    Deleted,
+    // Expired, // Reserved for future implementation
+    // Deleted, // Reserved for future implementation
     Undeliverable,
     Accepted,
-    Unknown,
+    // Unknown, // Reserved for future implementation
     Rejected,
 }
 
@@ -87,7 +87,7 @@ fn check_transition(msg: &QueuedMessage, config: &AppConfig) -> Option<MessageSt
     if elapsed >= config.lifecycle.max_time_enroute_ms {
         // Time to transition!
         let mut rng = rand::rng();
-        let roll = rng.gen_range(0..100);
+        let roll = rng.random_range(0..100);
         
         let mut cumulative = 0;
         
@@ -118,11 +118,11 @@ fn create_delivery_receipt(msg: &QueuedMessage, state: MessageState, _config: &A
     
     let stat_str = match state {
         MessageState::Delivered => "DELIVRD",
-        MessageState::Expired => "EXPIRED",
-        MessageState::Deleted => "DELETED",
+        // MessageState::Expired => "EXPIRED",
+        // MessageState::Deleted => "DELETED",
         MessageState::Undeliverable => "UNDELIV",
         MessageState::Accepted => "ACCEPTD",
-        MessageState::Unknown => "UNKNOWN",
+        // MessageState::Unknown => "UNKNOWN",
         MessageState::Rejected => "REJECTD",
     };
 

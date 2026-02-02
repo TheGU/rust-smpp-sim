@@ -6,7 +6,6 @@ use crate::smpp::queue::{MessageQueue, MoMessageQueue, MoMessage};
 use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
-#[allow(dead_code)]
 pub mod utils;
 pub mod logs;
 
@@ -41,8 +40,7 @@ struct SessionDisplay {
 #[template(path = "dashboard.html")]
 struct DashboardTemplate {
     smpp_port: u16,
-    #[allow(dead_code)]
-    web_port: u16,
+    // web_port: u16,
     system_id: String,
     session_count: usize,
     message_count: usize,
@@ -91,7 +89,7 @@ async fn dashboard(data: web::Data<AppState>) -> impl Responder {
 
     let template = DashboardTemplate {
         smpp_port: data.config.smpp.port,
-        web_port: data.config.server.port,
+        // web_port: data.config.server.port,
         system_id: data.config.smpp.system_id.clone(),
         session_count: sessions.len(),
         message_count: messages.len(),

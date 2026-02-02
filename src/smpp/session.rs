@@ -3,7 +3,6 @@ use uuid::Uuid;
 use serde::Serialize;
 use regex;
 
-#[allow(dead_code)]
 use rusmpp::values::InterfaceVersion;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -18,8 +17,7 @@ pub struct Session {
     pub id: String,
     pub system_id: String,
     pub bind_type: BindType,
-    #[allow(dead_code)]
-    #[serde(skip)]
+        #[serde(skip)]
     pub interface_version: Option<InterfaceVersion>,
     #[serde(serialize_with = "serialize_addr")]
     pub addr: std::net::SocketAddr,
@@ -77,13 +75,11 @@ impl SessionManager {
         self.sessions.remove(session_id);
     }
     
-    #[allow(dead_code)]
-    pub fn get_session(&self, session_id: &str) -> Option<Session> {
+        pub fn get_session(&self, session_id: &str) -> Option<Session> {
         self.sessions.get(session_id).map(|s| s.clone())
     }
 
-    #[allow(dead_code)]
-    pub fn count(&self) -> usize {
+        pub fn count(&self) -> usize {
         self.sessions.len()
     }
 

@@ -2,7 +2,6 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use dashmap::DashMap;
 use serde::Serialize;
 
-#[allow(dead_code)]
 use tokio::sync::mpsc;
 
 /// Represents a submitted message in the queue
@@ -14,12 +13,10 @@ pub struct QueuedMessage {
     #[serde(skip)]
     pub short_message: Vec<u8>,
     #[serde(skip)]
-    #[allow(dead_code)]
-    pub data_coding: u8,
+        pub data_coding: u8,
     pub session_id: String,
     #[serde(skip)]
-    #[allow(dead_code)]
-    pub submitted_at: std::time::Instant,
+        pub submitted_at: std::time::Instant,
 }
 
 /// Thread-safe message queue for outbound messages (MT -> Delivery Reports)
@@ -59,8 +56,7 @@ impl MessageQueue {
     }
 
     /// Get total message count
-    #[allow(dead_code)]
-    pub fn message_count(&self) -> usize {
+        pub fn message_count(&self) -> usize {
         self.all_messages.len()
     }
 
@@ -81,7 +77,6 @@ impl MessageQueue {
 }
 
 /// Queue for MO (Mobile Originated) messages to be delivered to ESMEs
-#[allow(dead_code)]
 pub struct MoMessageQueue {
     /// Channel sender for broadcasting MO messages
     tx: mpsc::Sender<MoMessage>,
@@ -89,7 +84,6 @@ pub struct MoMessageQueue {
     rx: std::sync::Mutex<Option<mpsc::Receiver<MoMessage>>>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct MoMessage {
     pub source_addr: String,
