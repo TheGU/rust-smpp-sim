@@ -1,5 +1,9 @@
 # Rust SMPP Simulator
 
+![CI](https://github.com/TheGU/rust-smpp-sim/actions/workflows/ci.yml/badge.svg)
+![Release](https://img.shields.io/github/v/release/TheGU/rust-smpp-sim)
+[![GHCR](https://img.shields.io/badge/ghcr-latest-blue?logo=github)](https://github.com/TheGU/rust-smpp-sim/pkgs/container/rust-smpp-sim)
+
 A high-performance, asynchronous SMPP 5.0 simulator written in Rust. Designed to replace legacy Java-based simulators with improved performance, stability, and modern features.
 
 ## Features
@@ -37,6 +41,18 @@ cargo run
 RUST_LOG=debug cargo run
 ```
 
+### Running with Docker
+
+You can use the Docker image published to GHCR:
+
+```sh
+# Pull the latest image
+docker pull ghcr.io/thegu/rust-smpp-sim:latest
+
+# Run the container
+docker run -p 2775:2775 -p 8080:8080 ghcr.io/thegu/rust-smpp-sim:latest
+```
+
 The server listens on **port 2775** for SMPP connections and **port 8080** for the Web Dashboard by default.
 
 ## Configuration
@@ -45,14 +61,16 @@ Configuration is managed via the `config` crate and supports environment variabl
 
 ### Key Configuration Options
 
-| Category      | Variable                        | Default | Description                      |
-| ------------- | ------------------------------- | ------- | -------------------------------- |
-| **Server**    | `SERVER_PORT`                   | `8080`  | Web Dashboard port               |
-| **SMPP**      | `SMPP_PORT`                     | `2775`  | SMPP listening port              |
-|               | `SMPP_SYSTEM_ID`                | `user`  | Default System ID                |
-|               | `SMPP_PASSWORD`                 | `pass`  | Default Password                 |
-| **Lifecycle** | `LIFECYCLE_MAX_TIME_ENROUTE_MS` | `5000`  | Max time before state transition |
-|               | `LIFECYCLE_PERCENT_DELIVERED`   | `90`    | Probability of `DELIVRD` status  |
+| Category      | Variable                        | Default   | Description                      |
+| ------------- | ------------------------------- | --------- | -------------------------------- |
+| **Server**    | `SERVER_HOST`                   | `0.0.0.0` | Binding IP address               |
+|               | `SERVER_PORT`                   | `8080`    | Web Dashboard port               |
+| **SMPP**      | `SMPP_PORT`                     | `2775`    | SMPP listening port              |
+|               | `SMPP_SYSTEM_ID`                | `user`    | Default System ID                |
+|               | `SMPP_PASSWORD`                 | `pass`    | Default Password                 |
+| **Logging**   | `LOG_LEVEL`                     | `info`    | Log level (info, debug, trace)   |
+| **Lifecycle** | `LIFECYCLE_MAX_TIME_ENROUTE_MS` | `5000`    | Max time before state transition |
+|               | `LIFECYCLE_PERCENT_DELIVERED`   | `90`      | Probability of `DELIVRD` status  |
 
 ## Usage
 

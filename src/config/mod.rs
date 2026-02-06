@@ -117,7 +117,19 @@ impl AppConfig {
             .add_source(File::with_name(&format!("config.{}", run_mode)).required(false))
             
             // Add environment variables (e.g., SMPP_SERVER_PORT=8080)
+            // Add environment variables (prefix with SMPP__)
             .add_source(Environment::with_prefix("SMPP").separator("__"))
+            
+            // Allow explicit overrides for documented env vars
+            .set_override_option("server.host", env::var("SERVER_HOST").ok())?
+            .set_override_option("server.port", env::var("SERVER_PORT").ok().map(|v| v.parse::<u16>().unwrap_or(8080)))?
+            .set_override_option("smpp.port", env::var("SMPP_PORT").ok().map(|v| v.parse::<u16>().unwrap_or(2775)))?
+            .set_override_option("smpp.system_id", env::var("SMPP_SYSTEM_ID").ok())?
+            .set_override_option("smpp.password", env::var("SMPP_PASSWORD").ok())?
+            .set_override_option("log.level", env::var("LOG_LEVEL").ok())?
+            .set_override_option("lifecycle.max_time_enroute_ms", env::var("LIFECYCLE_MAX_TIME_ENROUTE_MS").ok().map(|v| v.parse::<u64>().unwrap_or(10000)))?
+            .set_override_option("lifecycle.percent_delivered", env::var("LIFECYCLE_PERCENT_DELIVERED").ok().map(|v| v.parse::<u8>().unwrap_or(90)))?
+            
             .build()?;
 
         s.try_deserialize()

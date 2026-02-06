@@ -35,12 +35,14 @@ COPY --from=builder /app/templates /app/templates
 COPY --from=builder /app/static /app/static
 
 # Environment variables
-ENV SMPP__SERVER__HOST=0.0.0.0
-ENV SMPP__SERVER__PORT=8080
-ENV SMPP__SMPP__PORT=2775
-ENV SMPP__SMPP__SYSTEM_ID=smppclient1
-ENV SMPP__SMPP__PASSWORD=password
-ENV SMPP__LOG__LEVEL=info
+# Environment variables
+ENV SERVER_HOST=0.0.0.0
+ENV SERVER_PORT=8080
+ENV SMPP_PORT=2775
+ENV SMPP_SYSTEM_ID=smppclient1
+# Password should be supplied at runtime for security
+# ENV SMPP_PASSWORD=password 
+ENV LOG_LEVEL=info
 
 # Expose ports
 EXPOSE 8080 2775
