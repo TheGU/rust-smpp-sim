@@ -36,6 +36,7 @@ fn test_config() -> AppConfig {
             port: 2775,
             max_sessions: 50,
             accounts: vec![],
+            version: "5.0".to_string(),
         },
         log: crate::config::LogConfig {
             level: "info".to_string(),

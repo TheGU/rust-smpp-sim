@@ -40,7 +40,7 @@ struct SessionDisplay {
 #[template(path = "dashboard.html")]
 struct DashboardTemplate {
     smpp_port: u16,
-    // web_port: u16,
+    smpp_version: String,
     system_id: String,
     session_count: usize,
     message_count: usize,
@@ -89,7 +89,7 @@ async fn dashboard(data: web::Data<AppState>) -> impl Responder {
 
     let template = DashboardTemplate {
         smpp_port: data.config.smpp.port,
-        // web_port: data.config.server.port,
+        smpp_version: data.config.smpp.version.clone(),
         system_id: data.config.smpp.system_id.clone(),
         session_count: sessions.len(),
         message_count: messages.len(),

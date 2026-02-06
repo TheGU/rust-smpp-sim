@@ -3,11 +3,12 @@ use std::sync::Arc;
 use std::str::FromStr;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::codec::Framed;
-use rusmpp::{tokio_codec::CommandCodec, Command, Pdu, CommandStatus};
+use rusmpp::{Command, Pdu, CommandStatus};
 use rusmpp::types::COctetString;
 use futures::{SinkExt, StreamExt};
 use crate::smpp::session::{Session, SessionManager, BindType};
 use crate::smpp::queue::{MessageQueue, QueuedMessage};
+use crate::smpp::codec::{SmppCodec, SmppVersion};
 
 pub async fn start_smpp_server(
     config: Arc<AppConfig>,
@@ -17,7 +18,8 @@ pub async fn start_smpp_server(
     let addr = format!("0.0.0.0:{}", config.smpp.port);
     let listener = TcpListener::bind(&addr).await?;
     
-    tracing::info!("SMPP Server started/listening on {}", addr);
+    let smpp_version = SmppVersion::from_str(&config.smpp.version);
+    tracing::info!("SMPP Server started/listening on {} (SMPP version: {} compatibility)", addr, smpp_version.as_str());
 
     loop {
         let (socket, _) = listener.accept().await?;
@@ -39,8 +41,9 @@ async fn handle_connection(socket: TcpStream, config: Arc<AppConfig>, session_ma
     let remote_addr = socket.peer_addr()?;
     tracing::info!("New connection from {}", remote_addr);
 
-    // Use rusmpp codec for framing
-    let framed = Framed::new(socket, CommandCodec::new());
+    // Use SmppCodec for framing with version compatibility
+    let smpp_version = SmppVersion::from_str(&config.smpp.version);
+    let framed = Framed::new(socket, SmppCodec::new(smpp_version));
     let (mut sink, mut stream) = framed.split();
     
     // Channel for sending PDUs from other parts of the application (e.g. LifecycleManager) to this socket

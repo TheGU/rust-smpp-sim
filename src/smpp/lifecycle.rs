@@ -214,7 +214,7 @@ mod tests {
         
         let config = AppConfig {
             server: ServerConfig { host: "".into(), port: 0 },
-            smpp: SmppConfig { system_id: "".into(), password: "".into(), port: 0, max_sessions: 0, accounts: vec![] },
+            smpp: SmppConfig { system_id: "".into(), password: "".into(), port: 0, max_sessions: 0, accounts: vec![], version: "5.0".into() },
             log: LogConfig { level: "info".into() },
             lifecycle: LifecycleConfig::default(),
             mo_service: MoServiceConfig::default(),

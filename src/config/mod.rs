@@ -27,6 +27,12 @@ pub struct SmppConfig {
     pub max_sessions: usize,
     #[serde(default)]
     pub accounts: Vec<SmppAccount>,
+    #[serde(default = "default_smpp_version")]
+    pub version: String,  // "3.4" or "5.0"
+}
+
+fn default_smpp_version() -> String {
+    "5.0".to_string()
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -96,6 +102,7 @@ impl AppConfig {
             .set_default("smpp.system_id", "smppclient1")?
             .set_default("smpp.password", "password")?
             .set_default("smpp.max_sessions", 50)?
+            .set_default("smpp.version", "5.0")?
             .set_default("log.level", "info")?
             
             // Lifecycle defaults
@@ -126,6 +133,7 @@ impl AppConfig {
             .set_override_option("smpp.port", env::var("SMPP_PORT").ok().map(|v| v.parse::<u16>().unwrap_or(2775)))?
             .set_override_option("smpp.system_id", env::var("SMPP_SYSTEM_ID").ok())?
             .set_override_option("smpp.password", env::var("SMPP_PASSWORD").ok())?
+            .set_override_option("smpp.version", env::var("SMPP_VERSION").ok())?
             .set_override_option("log.level", env::var("LOG_LEVEL").ok())?
             .set_override_option("lifecycle.max_time_enroute_ms", env::var("LIFECYCLE_MAX_TIME_ENROUTE_MS").ok().map(|v| v.parse::<u64>().unwrap_or(10000)))?
             .set_override_option("lifecycle.percent_delivered", env::var("LIFECYCLE_PERCENT_DELIVERED").ok().map(|v| v.parse::<u8>().unwrap_or(90)))?

@@ -1,99 +1,179 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SMPP Simulator</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css" />
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <h1>SMPP Simulator</h1>
-            <div class="badges">
-                <span class="green">● SMPP :{{ smpp_port }}</span>
-                <span>System: {{ system_id }}</span>
-            </div>
-        </header>
-
-        <!-- Stats area - refreshed by htmx -->
-        <div class="grid" id="stats-grid" hx-get="/partials/stats" hx-trigger="every 2s" hx-swap="innerHTML">
-            <div class="stat"><div class="stat-label">Sessions</div><div class="stat-value">{{ session_count }}</div></div>
-            <div class="stat"><div class="stat-label">Messages</div><div class="stat-value">{{ message_count }}</div></div>
-            <div class="stat"><div class="stat-label">Pending DR</div><div class="stat-value">{{ pending_dr_count }}</div></div>
-            <div class="stat"><div class="stat-label">System ID</div><div class="stat-value small">{{ system_id }}</div></div>
+      <header>
+        <h1>SMPP Simulator</h1>
+        <div class="badges">
+          <span class="green">● SMPP :{{ smpp_port }}</span>
+          <span class="blue">v{{ smpp_version }}</span>
+          <span>System: {{ system_id }}</span>
         </div>
+      </header>
 
-        <div class="row">
-            <!-- Sessions table -->
-            <div class="card">
-                <h2>Active Sessions</h2>
-                <div id="sessions-table" hx-get="/partials/sessions" hx-trigger="every 10s" hx-swap="innerHTML">
-                    <table>
-                        <thead><tr><th>ID</th><th>System</th><th>Type</th><th>Address</th></tr></thead>
-                        <tbody>
-                            {% for session in sessions %}
-                            <tr><td>{{ session.id|truncate(8) }}</td><td>{{ session.system_id }}</td><td>{{ session.bind_type }}</td><td>{{ session.addr }}</td></tr>
-                            {% endfor %}
-                            {% if sessions.is_empty() %}
-                            <tr><td colspan="4" class="empty">No sessions</td></tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Form - static -->
-            <div class="card">
-                <h2>Inject MO Message</h2>
-                <form id="mo-form" hx-post="/api/inject-mo" hx-target="#mo-result" hx-swap="innerHTML">
-                    <div class="form-row">
-                        <input type="text" name="source" placeholder="Source: +1234567890" required>
-                        <input type="text" name="dest" placeholder="Dest: +0987654321" required>
-                    </div>
-                    <textarea name="message" placeholder="Message text..." required></textarea>
-                    <button type="submit">Send MO</button>
-                </form>
-                <div id="mo-result"></div>
-            </div>
+      <!-- Stats area - refreshed by htmx -->
+      <div
+        class="grid"
+        id="stats-grid"
+        hx-get="/partials/stats"
+        hx-trigger="every 2s"
+        hx-swap="innerHTML"
+      >
+        <div class="stat">
+          <div class="stat-label">Sessions</div>
+          <div class="stat-value">{{ session_count }}</div>
         </div>
-
-        <!-- Messages table -->
-        <div class="card mb-md">
-            <h2>Received Messages</h2>
-            <div id="messages-table" hx-get="/partials/messages" hx-trigger="every 2s" hx-swap="innerHTML">
-                <table>
-                    <thead><tr><th>ID</th><th>From</th><th>To</th><th>Content</th></tr></thead>
-                    <tbody>
-                        {% for msg in messages %}
-                        <tr><td>{{ msg.message_id }}</td><td>{{ msg.source_addr }}</td><td>{{ msg.dest_addr }}</td><td>{{ msg.content }}</td></tr>
-                        {% endfor %}
-                        {% if messages.is_empty() %}
-                        <tr><td colspan="4" class="empty">No messages yet</td></tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
+        <div class="stat">
+          <div class="stat-label">Messages</div>
+          <div class="stat-value">{{ message_count }}</div>
         </div>
+        <div class="stat">
+          <div class="stat-label">Pending DR</div>
+          <div class="stat-value">{{ pending_dr_count }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">System ID</div>
+          <div class="stat-value small">{{ system_id }}</div>
+        </div>
+      </div>
 
-        <!-- Real-time Logs -->
+      <div class="row">
+        <!-- Sessions table -->
         <div class="card">
-            <h2>Server Logs (Real-time)</h2>
-            <div id="log-container" class="log-panel" hx-get="/partials/logs" hx-trigger="load"></div>
+          <h2>Active Sessions</h2>
+          <div
+            id="sessions-table"
+            hx-get="/partials/sessions"
+            hx-trigger="every 10s"
+            hx-swap="innerHTML"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>System</th>
+                  <th>Type</th>
+                  <th>Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for session in sessions %}
+                <tr>
+                  <td>{{ session.id|truncate(8) }}</td>
+                  <td>{{ session.system_id }}</td>
+                  <td>{{ session.bind_type }}</td>
+                  <td>{{ session.addr }}</td>
+                </tr>
+                {% endfor %} {% if sessions.is_empty() %}
+                <tr>
+                  <td colspan="4" class="empty">No sessions</td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- Form - static -->
+        <div class="card">
+          <h2>Inject MO Message</h2>
+          <form
+            id="mo-form"
+            hx-post="/api/inject-mo"
+            hx-target="#mo-result"
+            hx-swap="innerHTML"
+          >
+            <div class="form-row">
+              <input
+                type="text"
+                name="source"
+                placeholder="Source: +1234567890"
+                required
+              />
+              <input
+                type="text"
+                name="dest"
+                placeholder="Dest: +0987654321"
+                required
+              />
+            </div>
+            <textarea
+              name="message"
+              placeholder="Message text..."
+              required
+            ></textarea>
+            <button type="submit">Send MO</button>
+          </form>
+          <div id="mo-result"></div>
+        </div>
+      </div>
+
+      <!-- Messages table -->
+      <div class="card mb-md">
+        <h2>Received Messages</h2>
+        <div
+          id="messages-table"
+          hx-get="/partials/messages"
+          hx-trigger="every 2s"
+          hx-swap="innerHTML"
+        >
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Content</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for msg in messages %}
+              <tr>
+                <td>{{ msg.message_id }}</td>
+                <td>{{ msg.source_addr }}</td>
+                <td>{{ msg.dest_addr }}</td>
+                <td>{{ msg.content }}</td>
+              </tr>
+              {% endfor %} {% if messages.is_empty() %}
+              <tr>
+                <td colspan="4" class="empty">No messages yet</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Real-time Logs -->
+      <div class="card">
+        <h2>Server Logs (Real-time)</h2>
+        <div
+          id="log-container"
+          class="log-panel"
+          hx-get="/partials/logs"
+          hx-trigger="load"
+        ></div>
+      </div>
     </div>
 
     <script>
-        const logContainer = document.getElementById('log-container');
-        const evtSource = new EventSource('/api/logs/stream');
-        evtSource.onmessage = function(event) {
-            const div = document.createElement('div');
-            div.className = 'log-line';
-            div.textContent = event.data;
-            logContainer.insertBefore(div, logContainer.firstChild);
-            while (logContainer.children.length > 100) logContainer.removeChild(logContainer.lastChild);
-        };
+      const logContainer = document.getElementById("log-container");
+      const evtSource = new EventSource("/api/logs/stream");
+      evtSource.onmessage = function (event) {
+        const div = document.createElement("div");
+        div.className = "log-line";
+        div.textContent = event.data;
+        logContainer.insertBefore(div, logContainer.firstChild);
+        while (logContainer.children.length > 100)
+          logContainer.removeChild(logContainer.lastChild);
+      };
     </script>
-</body>
+  </body>
 </html>

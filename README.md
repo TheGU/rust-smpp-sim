@@ -72,6 +72,21 @@ Configuration is managed via the `config` crate and supports environment variabl
 | **Lifecycle** | `LIFECYCLE_MAX_TIME_ENROUTE_MS` | `5000`    | Max time before state transition |
 |               | `LIFECYCLE_PERCENT_DELIVERED`   | `90`      | Probability of `DELIVRD` status  |
 
+### SMPP Version Compatibility
+
+The simulator defaults to SMPP v5.0. If you are using an older client (e.g., Node.js `smpp` package v0.3.x) that requires SMPP v3.4, you must enable compatibility mode:
+
+```bash
+# Windows PowerShell
+$env:SMPP_VERSION="3.4"
+cargo run
+
+# Linux/macOS
+SMPP_VERSION=3.4 cargo run
+```
+
+This enables a lenient decoder that handles PDU format differences (specifically missing null terminators in COctetStrings) common in SMPP 3.4 clients.
+
 ## Usage
 
 1. **Connect**: Use any SMPP client (e.g., `smpp-cli`, Kannel, or custom code) to bind to `localhost:2775` with `user`/`pass`.

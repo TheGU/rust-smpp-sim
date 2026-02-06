@@ -3,6 +3,7 @@ pub mod session;
 pub mod queue;
 pub mod lifecycle;
 pub mod mo_service;
+pub mod codec;
 
 #[cfg(test)]
 mod session_tests;

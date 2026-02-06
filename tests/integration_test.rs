@@ -33,6 +33,7 @@ async fn test_smpp_flow() {
             port: port,
             max_sessions: 10,
             accounts: vec![],
+            version: "5.0".to_string(),
         },
         log: LogConfig {
             level: "info".to_string(),
