@@ -1,8 +1,8 @@
 # Rust SMPP Simulator
 
 ![CI](https://github.com/TheGU/rust-smpp-sim/actions/workflows/ci.yml/badge.svg)
-![Release](https://img.shields.io/github/v/release/TheGU/rust-smpp-sim)
-[![GHCR](https://img.shields.io/badge/ghcr-latest-blue?logo=github)](https://github.com/TheGU/rust-smpp-sim/pkgs/container/rust-smpp-sim)
+![Release](https://img.shields.io/github/v/release/TheGU/rust-smpp-sim?logo=github&color=blue)
+[![GHCR](https://img.shields.io/github/v/release/TheGU/rust-smpp-sim?label=ghcr&logo=github&color=blue)](https://github.com/TheGU/rust-smpp-sim/pkgs/container/rust-smpp-sim)
 
 A high-performance, asynchronous SMPP 5.0 simulator written in Rust. Designed to replace legacy Java-based simulators with improved performance, stability, and modern features.
 
